@@ -1,0 +1,95 @@
+package com.kik.config.ice.source;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+import com.kik.config.ice.exception.ConfigException;
+import com.kik.config.ice.internal.ConfigChangeEvent;
+import com.kik.config.ice.internal.ConfigDescriptor;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collector;
+import lombok.extern.slf4j.Slf4j;
+import rx.Observable;
+import rx.subjects.BehaviorSubject;
+import rx.subjects.Subject;
+
+/**
+ * Base class that implements much of the shared plumbing for all DynamicConfigSource implementations
+ */
+@Slf4j
+public abstract class AbstractDynamicConfigSource implements DynamicConfigSource
+{
+    protected final ImmutableList<ConfigDescriptor> configDescriptors;
+    protected final ConcurrentMap<String, Optional<String>> lastEmittedValues;
+    protected final Map<String, Subject<ConfigChangeEvent<String>, ConfigChangeEvent<String>>> subjectMap;
+
+    protected AbstractDynamicConfigSource(Collection<ConfigDescriptor> configDescriptors)
+    {
+        this.configDescriptors = configDescriptors.stream()
+            .sorted(Comparator.comparing(desc -> desc.getConfigName()))
+            .collect(toImmutableList());
+
+        this.lastEmittedValues = Maps.newConcurrentMap();
+        this.subjectMap = Maps.newHashMap();
+
+        initializeRx();
+    }
+
+    private void initializeRx()
+    {
+        // Initialize lastEmittedValues and subjectMap for each descriptor
+        for (ConfigDescriptor desc : configDescriptors) {
+            BehaviorSubject<ConfigChangeEvent<String>> behaviorSubject = BehaviorSubject.create();
+            behaviorSubject.onNext(new ConfigChangeEvent<>(desc.getConfigName(), Optional.empty()));
+            subjectMap.put(desc.getConfigName(), behaviorSubject.toSerialized());
+            lastEmittedValues.put(desc.getConfigName(), Optional.empty());
+        }
+        log.debug("Finished constructing Rx.Subjects for {} configuration keys", configDescriptors.size());
+    }
+
+    @Override
+    public Observable<ConfigChangeEvent<String>> getObservable(String configName)
+    {
+        if (!subjectMap.containsKey(configName)) {
+            throw new ConfigException("Unknown configName {}", configName);
+        }
+        return subjectMap.get(configName);
+    }
+
+    protected void emitEvent(String configKey, Optional<String> valueOpt)
+    {
+        emitEvent(new ConfigChangeEvent<>(configKey, valueOpt));
+    }
+
+    protected void emitEvent(ConfigChangeEvent<String> event)
+    {
+        checkNotNull(event);
+
+        final Optional<String> oldEventValue = this.lastEmittedValues.put(event.getName(), event.getValueOpt());
+        if (!event.getValueOpt().equals(oldEventValue)) {
+            Subject<ConfigChangeEvent<String>, ConfigChangeEvent<String>> subject = subjectMap.get(event.getName());
+            if (subject == null) {
+                log.warn("Event Subject was not initialized for key {} !", event.getName());
+                return;
+            }
+            log.trace("EMIT {} - value {}", event.getName(), event.getValueOpt());
+            subject.onNext(event);
+        }
+        else {
+            log.trace("NOT EMITTING key {} value {} - no change from previous value.", event.getName(), event.getValueOpt());
+        }
+    }
+
+    private static <T> Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> toImmutableList()
+    {
+        return Collector.of(
+            ImmutableList::builder,
+            (acc, item) -> acc.add(item),
+            (acc1, acc2) -> acc1.addAll(acc2.build()),
+            acc -> acc.build());
+    }
+}
