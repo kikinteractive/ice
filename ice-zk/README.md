@@ -1,13 +1,19 @@
 # ice-zk
 
-Provides a `ZooKeeperDynamicConfigSource`.
+Provides a `ZooKeeperDynamicConfigSource` for managing configuration overrides via ZooKeeper nodes.
 
-This config source will create a node in ZooKeeper for each config value.  For each running application instance, an ephemeral node is created, with the hostname and PID of the application, so you can determine what application(s) are actively using which values.
+## Overview
 
-By default, the nodes are created with the following scheme (`${}` indicates the appropriate value would be substituted):
+* On system startup, ZooKeeperDynamicConfigSource will create a node in ZooKeeper for each config value.
+  * Nodes are created with the following scheme (`${}` indicates the appropriate value would be substituted):
 ```
-/app/config/overrides/${fullConfigPkgAndClassName}.${methodName}[:${optionalContext}]
+/${appDefinedRoot}/config/overrides/${fullConfigPkgAndClassName}.${methodName}[:${optionalContext}]
 ```
+* For each running application instance, an ephemeral node is created named with the hostname and PID of the application.  This allows you to easily determine which applications and instances thereof that are actively using which config values.
+
+## Usage
+### Project Imports
+**Note:** *Maven artifacts are not yet published.  This notice will be removed when we get them published to Maven Central.*
 
 You can use ice-zk with maven by adding the following to your pom.xml:
 ```xml
@@ -19,6 +25,38 @@ You can use ice-zk with maven by adding the following to your pom.xml:
   </dependency>
 </dependencies>
 ```
+
+### ZooKeeperDynamicConfigSource Configuration
+
+Configuration for the ZooKeeperDynamicConfigSource itself is accomplished by binding String values in guice using Guice's `@Named` annotation to distinguish them.  The config source has one *required* configuration, and several optional ones.
+
+Below is an example defining some of these values in a Module to be included in an application's injector creation:
+
+```java
+public class ZkConfigModule extends AbstractModule
+{
+  @Override
+  protected void configure()
+  {
+    // Install the ZooKeeperDynamicConfigSource itself
+    install(ZooKeeperDynamicConfigSource.module());
+
+    // Remainder is configuration for the ZooKeeperDynamicConfigSource singleton
+
+    // Connection string is REQUIRED
+    bind(String.class).annotatedWith(Names.named(ZooKeeperDynamicConfigSource.CONFIG_CONNECTION_STRING))
+      .toInstance("my-zk-server.foo.com:2181");
+
+    // All the rest are optional.
+    bind(String.class).annotatedWith(Names.named(ZooKeeperDynamicConfigSource.CONFIG_CURATOR_NAMESPACE))
+      .toInstance("myApp");
+    bind(Integer.class).annotatedWith(Names.named(ZooKeeperDynamicConfigSource.CONFIG_CURATOR_SESSION_TIMEOUT))
+      .toInstance(60_000);
+  }
+}
+```
+
+Further configuration names can be found in [ZooKeeperDynamicConfigSource.java](https://github.com/kikinteractive/ice/blob/master/ice-zk/src/main/java/com/kik/config/ice/source/ZooKeeperDynamicConfigSource.java#L41-L51).  Default values are defined just under the config constants.
 
 # Author
 Kik Interactive Inc.

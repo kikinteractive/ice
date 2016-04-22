@@ -46,6 +46,7 @@ public class JmxDynamicConfigSourceTest
     @Inject
     private ExampleComponent component;
 
+    // NOTE: do not setup as a JUnit @ClassRule
     @Inject
     private JmxRemoteTestRule testRule;
 
@@ -55,8 +56,8 @@ public class JmxDynamicConfigSourceTest
     @Before
     public void setup() throws Exception
     {
-        objName1 = new ObjectName("com.kik.config.ice.source:name=ExampleComponentIfcMBean");
-        objName2 = new ObjectName("com.kik.config.ice.source:name=ExampleSubComponentIfcMBean,scope=EXAMPLE");
+        objName1 = new ObjectName("com.kik.config.ice.source:name=ExampleComponentIceMBean");
+        objName2 = new ObjectName("com.kik.config.ice.source:name=ExampleSubComponentIceMBean,scope=EXAMPLE");
 
         Injector injector = Guice.createInjector(
             ConfigConfigurator.testModules(),
