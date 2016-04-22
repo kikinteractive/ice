@@ -12,6 +12,7 @@ A configuration system written in Java 8 that leverages Dependency Injection via
 * No confusing use of separate "bootstrap" guice injectors; All ice system classes are just included in your app's main injector.
 
 ## Usage
+**Note:** *Maven artifacts are not yet published.  This notice will be removed when we get them published to Maven Central.*
 ### Project Setup
 You can use ice with maven by adding the following to your pom.xml:
 ```xml
@@ -160,11 +161,10 @@ Further examples of usage can be found in [com.kik.config.ice.example](https://g
 ## Motivations
 ICE was developed with a few ideas in mind, some of which were not readily available in other pre-existing configuration libraries.  These ideas were:
 
-* *Simple setup with a single Guice injector.*  We wanted a simple setup of a single Guice injector for your app, which could be given a Module for the config system, and then modules for each config interface to be used.
-* *Condensed config definition* Defining the config value's name, type, and default value is done all in one place, with inherent context to where it was defined.  Using interfaces also forces keeping configuration definitions together -- all your configuration for a class can be identified easily.
-* *Reactive elements* ICE uses the excellent [RxJava](https://github.com/ReactiveX/RxJava) library internally, and makes your config values available via Observables.  This allows you to subscribe to config updates.  An example where this might be useful is for re-initializing a components on-the-fly without the need to poll for changes.
-* *Flexible and Extendable* If you need several sources of configuration, you can use multiple DynamicConfigSource implementations concurrently, where sources are set up to override each other in a priority list.  If you need configuration from a custom system, you can implement a new DynamicConfigSource for that system.  Custom types in your config interfaces can be supported by providing guice bindings for more ConfigValueConverter implementations.  (See [ConfigValueConverters.java](https://github.com/kikinteractive/ice/blob/master/ice/src/main/java/com/kik/config/ice/convert/ConfigValueConverters.java)
-
+* **Simple setup with a single Guice injector.**  We wanted a simple setup of a single Guice injector for your app, which could be given a Module for the config system, and then modules for each config interface to be used.
+* **Condensed config definition** Defining the config value's name, type, and default value is done all in one place, with inherent context to where it was defined.  Using interfaces also forces keeping configuration definitions together -- all your configuration for a class can be identified easily.
+* **Reactive elements** ICE uses the excellent [RxJava](https://github.com/ReactiveX/RxJava) library internally, and makes your config values available via Observables.  This allows you to subscribe to config updates.  An example where this might be useful is for re-initializing a components on-the-fly without the need to poll for changes.
+* **Flexible and Extendable** If you need several sources of configuration, you can use multiple DynamicConfigSource implementations concurrently, where sources are set up to override each other in a priority list.  If you need configuration from a custom system, you can implement a new DynamicConfigSource for that system.  Custom types in your config interfaces can be supported by providing guice bindings for more ConfigValueConverter implementations.  (See [ConfigValueConverters.java](https://github.com/kikinteractive/ice/blob/master/ice/src/main/java/com/kik/config/ice/convert/ConfigValueConverters.java)
 
 # Author
 Kik Interactive Inc.

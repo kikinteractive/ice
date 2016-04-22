@@ -30,9 +30,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:kikinteractive/interface-config.git</connection>
-        <developerConnection>scm:git:git@github.com:kikinteractive/interface-config.git</developerConnection>
-        <url>git@github.com:kikinteractive/interface-config.git</url>
+        <connection>scm:git:git@github.com:kikinteractive/ice.git</connection>
+        <developerConnection>scm:git:git@github.com:kikinteractive/ice.git</developerConnection>
+        <url>git@github.com:kikinteractive/ice.git</url>
     </scm>
 
     <properties>
@@ -225,7 +225,7 @@
 
     <profiles>
         <profile>
-            <id>interface-config-release</id>
+            <id>ice-release</id>
             <build>
                 <plugins>
                     <plugin>

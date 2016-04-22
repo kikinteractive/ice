@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ConfigDynamicMBean implements DynamicMBean
 {
-    private final static String MBEAN_SUFFIX = "IfcMBean";
+    private final static String MBEAN_SUFFIX = "IceMBean";
     private final WeakReference<Injector> injectorRef;
     private final ConfigEventSink<String> eventSink;
     private final Map<String, Provider<PropertyAccessor<?>>> providerLookupByAttributeName;
