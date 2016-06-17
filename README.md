@@ -12,7 +12,6 @@ A configuration system written in Java 8 that leverages Dependency Injection via
 * No confusing use of separate "bootstrap" guice injectors; All ice system classes are just included in your app's main injector.
 
 ## Usage
-**Note:** *Maven artifacts are not yet published.  This notice will be removed when we get them published to Maven Central.*
 ### Project Setup
 You can use ice with maven by adding the following to your pom.xml:
 ```xml

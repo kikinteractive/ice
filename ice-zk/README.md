@@ -13,7 +13,6 @@ Provides a `ZooKeeperDynamicConfigSource` for managing configuration overrides v
 
 ## Usage
 ### Project Imports
-**Note:** *Maven artifacts are not yet published.  This notice will be removed when we get them published to Maven Central.*
 
 You can use ice-zk with maven by adding the following to your pom.xml:
 ```xml
