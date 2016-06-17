@@ -12,7 +12,6 @@ Provides a `JmxDynamicConfigSource` for managing configuration overrides via JMX
   * Example: if you wanted to configure a `Duration` value, you would provide something like `"PT1M"`.
 
 ### Project Setup
-**Note:** *Maven artifacts are not yet published.  This notice will be removed when we get them published to Maven Central.*
 
 You can use ice-jmx with maven by adding the following to your pom.xml:
 ```xml
