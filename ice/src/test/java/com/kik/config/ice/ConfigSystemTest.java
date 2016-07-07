@@ -15,11 +15,10 @@
  */
 package com.kik.config.ice;
 
-import com.kik.config.ice.internal.ConfigBuilder;
-import com.kik.config.ice.internal.OverrideModule;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -28,7 +27,9 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.exception.ConfigException;
+import com.kik.config.ice.internal.ConfigBuilder;
 import com.kik.config.ice.internal.ConstantValuePropertyAccessor;
+import com.kik.config.ice.internal.OverrideModule;
 import com.kik.config.ice.internal.PropertyAccessor;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
 import com.kik.config.ice.source.FileDynamicConfigSource;
@@ -110,6 +111,8 @@ public class ConfigSystemTest
 
     @Inject
     ConfigSystem configSystem;
+    @Inject
+    DebugDynamicConfigSource configSource;
 
     @Test(timeout = 5000, expected = ConfigException.class)
     public void testValidateStaticConfigurationWithBad()
@@ -131,6 +134,18 @@ public class ConfigSystemTest
             ValidValueExample.module());
 
         injector.injectMembers(this);
+
+        configSystem.validateStaticConfiguration();
+    }
+
+    @Test(timeout = 5000)
+    public void testNoConfiguration()
+    {
+        Injector injector = Guice.createInjector(ConfigConfigurator.testModules());
+        injector.injectMembers(this);
+
+        checkNotNull(configSystem);
+        checkNotNull(configSource);
 
         configSystem.validateStaticConfiguration();
     }

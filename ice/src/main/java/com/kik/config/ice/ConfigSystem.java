@@ -28,9 +28,9 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.util.Modules;
 import com.google.inject.util.Types;
-import com.kik.config.ice.internal.ConfigDescriptor;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.internal.ConfigBuilder;
+import com.kik.config.ice.internal.ConfigDescriptor;
 import com.kik.config.ice.internal.ConfigDescriptorFactory;
 import com.kik.config.ice.internal.OverrideModule;
 import com.kik.config.ice.internal.PropertyAccessor;
@@ -53,7 +53,7 @@ public class ConfigSystem
     public static final ConfigNamingStrategy namingStrategy = new SimpleConfigNamingStrategy();
     public static final ConfigDescriptorFactory descriptorFactory = new ConfigDescriptorFactory(namingStrategy);
 
-    @Inject
+    @Inject(optional = true)
     private Set<ConfigDescriptor> allConfigDescriptors;
 
     @Inject
@@ -224,6 +224,12 @@ public class ConfigSystem
     public void validateStaticConfiguration()
     {
         int failedConfigCount = 0;
+
+        if (allConfigDescriptors == null) {
+            log.warn("No config descriptors found. If you don't have any configurations installed, this warning can be ignored");
+            return;
+        }
+
         for (ConfigDescriptor desc : allConfigDescriptors) {
             try {
                 log.trace("Checking static config for property {}, with default value of {}",

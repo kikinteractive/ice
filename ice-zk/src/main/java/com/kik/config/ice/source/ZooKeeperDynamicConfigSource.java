@@ -219,7 +219,7 @@ public class ZooKeeperDynamicConfigSource extends AbstractDynamicConfigSource im
 
     public static class ZooKeeperDynamicConfigSourceProvider implements Provider<ZooKeeperDynamicConfigSource>
     {
-        @Inject
+        @Inject(optional = true)
         private Set<ConfigDescriptor> configDescriptors;
 
         @Inject

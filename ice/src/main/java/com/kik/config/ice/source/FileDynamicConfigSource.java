@@ -31,7 +31,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.internal.ConfigChangeEvent;
-import com.kik.config.ice.internal.ConfigDescriptor;
+import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import java.io.File;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -91,9 +91,9 @@ public class FileDynamicConfigSource extends AbstractDynamicConfigSource
     private Duration pollInterval;
 
     @Inject
-    protected FileDynamicConfigSource(Set<ConfigDescriptor> configDescriptors)
+    protected FileDynamicConfigSource(ConfigDescriptorHolder configDescriptorHolder)
     {
-        super(configDescriptors);
+        super(configDescriptorHolder.configDescriptors);
     }
 
     @Inject
@@ -109,6 +109,13 @@ public class FileDynamicConfigSource extends AbstractDynamicConfigSource
     protected void initialize()
     {
         if (isInitialized) {
+            return;
+        }
+
+        if (configDescriptors.isEmpty()) {
+            log.warn("No config descriptors found, will not load from file. If you don't have any configurations installed, this warning can be ignored");
+            closed = false;
+            isInitialized = true;
             return;
         }
 

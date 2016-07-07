@@ -54,7 +54,7 @@ public class FileDynamicConfigSourceTest
     }
 
     @Inject
-    FileDynamicConfigSource source;
+    private FileDynamicConfigSource source;
 
     @Test(timeout = 5000)
     public void testFile() throws Exception
