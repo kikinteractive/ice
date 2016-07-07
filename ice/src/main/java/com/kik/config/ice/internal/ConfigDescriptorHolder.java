@@ -16,6 +16,7 @@
 package com.kik.config.ice.internal;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.Set;
 
 /**
@@ -34,6 +35,7 @@ import java.util.Set;
  * }
  *
  */
+@Singleton
 public class ConfigDescriptorHolder
 {
     @Inject(optional = true)
