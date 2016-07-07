@@ -23,13 +23,13 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.internal.ConfigDescriptor;
+import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.sink.ConfigEventSink;
 import java.lang.ref.WeakReference;
 import static java.util.Comparator.comparing;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import javax.management.InstanceAlreadyExistsException;
@@ -63,9 +63,9 @@ public class JmxDynamicConfigSource extends AbstractDynamicConfigSource implemen
     private final MBeanServer mbeanServer;
 
     @Inject
-    protected JmxDynamicConfigSource(Injector injector, MBeanServer mbeanServer, Set<ConfigDescriptor> configDescriptors)
+    protected JmxDynamicConfigSource(Injector injector, MBeanServer mbeanServer, ConfigDescriptorHolder configDescriptorHolder)
     {
-        super(configDescriptors);
+        super(configDescriptorHolder.configDescriptors);
         this.injectorRef = new WeakReference<>(injector);
         this.mbeanServer = mbeanServer;
         initializeJmxBeans();

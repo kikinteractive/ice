@@ -22,6 +22,7 @@ import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.internal.ConfigChangeEvent;
 import com.kik.config.ice.internal.ConfigDescriptor;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +45,14 @@ public abstract class AbstractDynamicConfigSource implements DynamicConfigSource
 
     protected AbstractDynamicConfigSource(Collection<ConfigDescriptor> configDescriptors)
     {
+        if (configDescriptors == null) {
+            configDescriptors = Collections.emptySet();
+        }
+
+        if (configDescriptors.isEmpty()) {
+            log.warn("No config descriptors found. If you don't have any configurations installed, this warning can be ignored.");
+        }
+
         this.configDescriptors = configDescriptors.stream()
             .sorted(Comparator.comparing(desc -> desc.getConfigName()))
             .collect(toImmutableList());
