@@ -7,6 +7,7 @@ import com.google.inject.Injector;
 import com.kik.config.ice.ConfigConfigurator;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.exception.ConfigException;
 import java.time.Duration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,6 +39,15 @@ public class DebugDynamicConfigSourceTest
         // Optional<String> foo();
     }
 
+    /**
+     * This interface is intentionally NOT configured in Guice
+     */
+    public interface InvalidConfig
+    {
+        @DefaultValue("true")
+        boolean enabled();
+    }
+
     @Before
     public void setup()
     {
@@ -64,7 +74,7 @@ public class DebugDynamicConfigSourceTest
     @Inject
     private Config2 c2;
 
-    @Test
+    @Test(timeout = 5_000)
     public void testDebugController()
     {
         // Check basic Config1 changes
@@ -102,5 +112,19 @@ public class DebugDynamicConfigSourceTest
 
         dcs.set(dcs.id(Config1.class).connectionString()).toEmpty();
         assertEquals("a test string", c1.connectionString());
+    }
+
+    @Test(timeout = 5_000, expected = ConfigException.class)
+    public void testNoMethodId()
+    {
+        // No call on a method ID proxy prior to calling .set()
+        dcs.set(0L).toValue(123L);
+    }
+
+    @Test(timeout = 5_000, expected = ConfigException.class)
+    public void testInvalidIdentification()
+    {
+        // InvalidConfig.class is not configured in guice, so you can't specify it as a configuration to change
+        dcs.set(dcs.id(InvalidConfig.class)).toEmpty();
     }
 }

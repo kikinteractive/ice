@@ -30,7 +30,7 @@ public class MethodIdProxyFactory
 
     private static final ThreadLocal<MethodAndScope> lastIdentifiedMethodAndScope = new ThreadLocal();
 
-    private static final ConcurrentMap<Class<?>, Object> proxyMap = Maps.newConcurrentMap();
+    private static final ConcurrentMap<ClassAndScope, Object> proxyMap = Maps.newConcurrentMap();
 
     private MethodIdProxyFactory()
     {
@@ -49,16 +49,15 @@ public class MethodIdProxyFactory
      */
     public static <C> C getProxy(final Class<C> configInterface, final Optional<String> scopeNameOpt)
     {
-
-        // TODO: include scope in proxyMap key, and allow it to be identified along with the method.
+        final ClassAndScope key = new ClassAndScope(configInterface, scopeNameOpt);
 
         final C methodIdProxy;
-        if (proxyMap.containsKey(configInterface)) {
-            methodIdProxy = (C) proxyMap.get(configInterface);
+        if (proxyMap.containsKey(key)) {
+            methodIdProxy = (C) proxyMap.get(key);
         }
         else {
             methodIdProxy = createMethodIdProxy(configInterface, scopeNameOpt);
-            proxyMap.put(configInterface, methodIdProxy);
+            proxyMap.put(key, methodIdProxy);
         }
         return methodIdProxy;
     }
@@ -80,6 +79,13 @@ public class MethodIdProxyFactory
     public static class MethodAndScope
     {
         private Method method;
+        private Optional<String> scopeOpt;
+    }
+
+    @Value
+    private static class ClassAndScope
+    {
+        private Class<?> clazz;
         private Optional<String> scopeOpt;
     }
 
