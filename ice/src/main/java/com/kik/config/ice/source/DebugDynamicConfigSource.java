@@ -21,24 +21,46 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
+import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.internal.ConfigChangeEvent;
+import com.kik.config.ice.internal.ConfigDescriptor;
+import com.kik.config.ice.internal.ConfigDescriptorHolder;
+import com.kik.config.ice.internal.MethodIdProxyFactory;
 import com.kik.config.ice.sink.ConfigEventSink;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
 
+/**
+ * An {@link AbstractDynamicConfigSource} which allows direct manipulation of configuration values.
+ * Inject this config source and use {@link #set(Object)} and {@link #id(Class)} to identify and change configuration
+ * values.
+ * Example:
+ * <pre><code>
+ * {@literal @}Inject
+ * DebugDynamicConfigSource debugSource;
+ * // later in class, setting value of foo()
+ * debugSource.set(debugSource.id().foo()).toValue("abc");
+ * // Also, the value may be cleared:
+ * debugSource.set(debugSource.id().foo()).toEmpty();
+ * </code></pre>
+ */
 @Slf4j
 @Singleton
 public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implements ConfigEventSink<String>
 {
     private static final int CONFIG_SOURCE_PRIORITY_DEFAULT = 0;
 
+    private final Set<ConfigDescriptor> validDescriptors;
+
     @Inject
-    protected DebugDynamicConfigSource()
+    protected DebugDynamicConfigSource(ConfigDescriptorHolder configDescriptorHolder)
     {
         super(Collections.emptySet());
+        validDescriptors = configDescriptorHolder.configDescriptors;
     }
 
     @Override
@@ -49,8 +71,83 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
     }
 
     /**
-     * Debug handle to cause this ConfigSource to be updated to the new value, emitting an event if it is different
+     * Returns an method-identifying proxy of the given config interface, used within a call to {@link #set(Object)}
+     * to identify the method for which its value is to be set or cleared.
+     *
+     * @param configInterface the config interface to be proxied
+     * @param <C>             the config interface class
+     * @return the method-identifying proxy
+     */
+    public <C> C id(final Class<C> configInterface)
+    {
+        return MethodIdProxyFactory.getProxy(configInterface);
+    }
+
+    /**
+     * Returns an method-identifying proxy of the given config interface, used within a call to {@link #set(Object)}
+     * to identify the method for which its value is to be set or cleared.
+     *
+     * @param configInterface the config interface to be proxied
+     * @param scopeNameOpt    the optional scope to identify the particular config value to modify
+     * @param <C>             the config interface class
+     * @return the method-identifying proxy
+     */
+    public <C> C id(final Class<C> configInterface, final Optional<String> scopeNameOpt)
+    {
+        return MethodIdProxyFactory.getProxy(configInterface, scopeNameOpt);
+    }
+
+    /**
+     * Provides the start of a call chain which identifies and sets a configuration value.  Note that this needs to be
+     * used in conjunction with a method call to a method-identifying proxy, which can be retrieved via {@link #id(Class)}
+     *
+     * @param ignoredValueFromProxy The value returned by the method call against a method-identifying proxy.  The actual
+     *                              value here is irrelevant and is ignored.
+     * @param <V>                   The value type of the configuration entry to be changed
+     * @return a {@link DebugValueSetter} instance that will change the identified configuration value.
+     */
+    public <V> DebugValueSetter<V> set(final V ignoredValueFromProxy)
+    {
+        final MethodIdProxyFactory.MethodAndScope lastProxyMethodAndScope = MethodIdProxyFactory.getLastIdentifiedMethodAndScope();
+        if (lastProxyMethodAndScope == null) {
+            throw new ConfigException("Failed to identify config method previous to calling overrideDefault");
+        }
+
+        final Optional<ConfigDescriptor> configDescOpt = validDescriptors.stream()
+            .filter(desc -> desc.getMethod().equals(lastProxyMethodAndScope.getMethod()) && desc.getScope().equals(lastProxyMethodAndScope.getScopeOpt()))
+            .findAny();
+        final String configKey = configDescOpt.map(desc -> desc.getConfigName()).orElseThrow(
+            () -> new ConfigException("Config method identified is not correctly registered in the config system"));
+
+        return new DebugValueSetter<V>()
+        {
+            @Override
+            public void toValue(final V value)
+            {
+                final String stringValue = value == null ? "" : String.valueOf(value);
+                fireEvent(configKey, Optional.ofNullable(stringValue));
+            }
+
+            @Override
+            public void toEmpty()
+            {
+                fireEvent(configKey, Optional.empty());
+            }
+        };
+    }
+
+    public interface DebugValueSetter<V>
+    {
+        void toValue(V value);
+
+        void toEmpty();
+    }
+
+    /**
+     * A raw handle to cause this ConfigSource to be updated to the new value, emitting an event if it is different
      * than the previous value.
+     * It is recommended to instead use {@link #set(Object)} to provide a type-safe value rather than using this method
+     * directly in tests.
      *
      * @param configName the string name of the configuration value to be fired
      * @param valueOpt   an Optional String value of the config value to provide to the system. Optional.empty()
