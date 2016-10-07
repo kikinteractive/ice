@@ -109,9 +109,9 @@ public class ConfigBuilder
                 // instance so the provideres dont get GCed. The providers are supplied to the InvocationHandlerImpl
                 // using a WeakReference so the generated (static) code will not have a strong reference to the injector
                 // which will cause a memory leak.
-                String propertyAccessorProvidersFieldName = "propertyAccessorProviders$" + ThreadLocalRandom.current().nextLong(Long.MAX_VALUE);
+                final String propertyAccessorProvidersFieldName = "propertyAccessorProviders$" + ThreadLocalRandom.current().nextLong(Long.MAX_VALUE);
                 typeBuilder = typeBuilder.defineField(propertyAccessorProvidersFieldName, Collection.class, Visibility.PRIVATE);
-                ImmutableList.Builder<Provider<PropertyAccessor<?>>> propertyAccessorProviders = ImmutableList.builder();
+                ImmutableList.Builder<Provider<PropertyAccessor<?>>> propertyAccessorProvidersBuilder = ImmutableList.builder();
 
                 for (ConfigDescriptor desc : configDescList) {
                     // Bind the propertyIdentifier
@@ -143,7 +143,7 @@ public class ConfigBuilder
                         // Get accessorProvider for use in the configuration method implementation
                         accessorProvider = getAccessorProvider(desc, propertyId);
                     }
-                    propertyAccessorProviders.add(accessorProvider);
+                    propertyAccessorProvidersBuilder.add(accessorProvider);
 
                     // Register method implementation in the class builder
                     // Wrap the accessorProvider in a WeakReference before giving it to ByteBuddy to avoid a reference
@@ -159,11 +159,12 @@ public class ConfigBuilder
                 try {
                     C instance = (C) configImpl.newInstance();
 
+                    // To prevent the property accessor providers from getting GCed - see comments above:
                     Field propertyAccessorProvidersField = instance.getClass().getDeclaredField(propertyAccessorProvidersFieldName);
                     if (!propertyAccessorProvidersField.isAccessible()) {
                         propertyAccessorProvidersField.setAccessible(true);
                     }
-                    propertyAccessorProvidersField.set(instance, propertyAccessorProviders.build());
+                    propertyAccessorProvidersField.set(instance, propertyAccessorProvidersBuilder.build());
 
                     if (nameOpt.isPresent()) {
                         bind(configInterface).annotatedWith(nameOpt.get()).toInstance(instance);
