@@ -80,7 +80,6 @@ public class ConfigBuilderTest
         config = null;
 
         for (int i = 0; i < 10 && (injectorRef.get() != null || configRef.get() != null); i++) {
-
             System.gc();
             Thread.sleep(50);
             System.runFinalization();
