@@ -16,6 +16,7 @@
 package com.kik.config.ice.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -26,16 +27,22 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.inject.util.Types;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.kik.config.ice.convert.ConfigValueConverter;
-import com.kik.config.ice.internal.annotations.PropertyIdentifier;
-import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.exception.ConfigException;
+import com.kik.config.ice.internal.annotations.PropertyIdentifier;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
@@ -98,6 +105,14 @@ public class ConfigBuilder
 
                 Multibinder<ConfigDescriptor> multiBinder = Multibinder.newSetBinder(binder(), ConfigDescriptor.class);
 
+                // Define a field to keep a local reference to the list of propertyAccessorProviders on the dynamic
+                // instance so the provideres dont get GCed. The providers are supplied to the InvocationHandlerImpl
+                // using a WeakReference so the generated (static) code will not have a strong reference to the injector
+                // which will cause a memory leak.
+                final String propertyAccessorProvidersFieldName = "propertyAccessorProviders$" + ThreadLocalRandom.current().nextLong(Long.MAX_VALUE);
+                typeBuilder = typeBuilder.defineField(propertyAccessorProvidersFieldName, Collection.class, Visibility.PRIVATE);
+                ImmutableList.Builder<Provider<PropertyAccessor<?>>> propertyAccessorProvidersBuilder = ImmutableList.builder();
+
                 for (ConfigDescriptor desc : configDescList) {
                     // Bind the propertyIdentifier
                     final PropertyIdentifier propertyId = ConfigSystem.getIdentifier(desc);
@@ -128,23 +143,14 @@ public class ConfigBuilder
                         // Get accessorProvider for use in the configuration method implementation
                         accessorProvider = getAccessorProvider(desc, propertyId);
                     }
+                    propertyAccessorProvidersBuilder.add(accessorProvider);
 
                     // Register method implementation in the class builder
-                    typeBuilder = typeBuilder.method(ElementMatchers.is(desc.getMethod())).intercept(InvocationHandlerAdapter.of((Object proxy, Method method1, Object[] args) -> {
-                        log.debug("InvocationHandler invoking for method {} proxy {}, argCount {}", method1.getName(), proxy.toString(), args.length);
-                        Object value;
-
-                        if (desc.isObservable()) {
-                            value = accessorProvider.get().getObservable();
-                            log.debug("Invoked method {} returning Observable", method1.getName());
-                        }
-                        else {
-                            value = accessorProvider.get().get();
-                            log.debug("Invoked method {} returning value {}", method1.getName(), value == null ? "null" : value.toString());
-                        }
-                        return value;
-                    }));
+                    // Wrap the accessorProvider in a WeakReference before giving it to ByteBuddy to avoid a reference
+                    // to the injector making its way into the class loader which results in a memory leak.
+                    typeBuilder = typeBuilder.method(ElementMatchers.is(desc.getMethod())).intercept(InvocationHandlerAdapter.of(new InvocationHandlerImpl(desc, new WeakReference<>(accessorProvider))));
                 }
+
                 Class<? extends C> configImpl = typeBuilder.make()
                     .load(configInterface.getClassLoader(), ClassLoadingStrategy.Default.INJECTION)
                     .getLoaded();
@@ -152,6 +158,14 @@ public class ConfigBuilder
                 // Bind Config Interface to an instance of the newly created impl class
                 try {
                     C instance = (C) configImpl.newInstance();
+
+                    // To prevent the property accessor providers from getting GCed - see comments above:
+                    Field propertyAccessorProvidersField = instance.getClass().getDeclaredField(propertyAccessorProvidersFieldName);
+                    if (!propertyAccessorProvidersField.isAccessible()) {
+                        propertyAccessorProvidersField.setAccessible(true);
+                    }
+                    propertyAccessorProvidersField.set(instance, propertyAccessorProvidersBuilder.build());
+
                     if (nameOpt.isPresent()) {
                         bind(configInterface).annotatedWith(nameOpt.get()).toInstance(instance);
                     }
@@ -159,7 +173,7 @@ public class ConfigBuilder
                         bind(configInterface).toInstance(instance);
                     }
                 }
-                catch (InstantiationException | IllegalAccessException ex) {
+                catch (InstantiationException | IllegalAccessException | NoSuchFieldException | SecurityException ex) {
                     throw new ConfigException("Failed to instantiate implementation of Config {}",
                         configInterface.getName(), ex);
                 }
@@ -173,6 +187,39 @@ public class ConfigBuilder
                 return getProvider(Key.get(accessorKey, propertyId));
             }
         };
+    }
+
+    private static class InvocationHandlerImpl implements InvocationHandler
+    {
+        private final ConfigDescriptor desc;
+        /**
+         * It is incredibly important that we do not hold a strong reference to the Provider otherwise a reference to
+         * the underlying injector gets into the classloader and results in a memory leak.
+         */
+        private final WeakReference<Provider<PropertyAccessor<?>>> accessorProviderRef;
+
+        public InvocationHandlerImpl(ConfigDescriptor desc, WeakReference<Provider<PropertyAccessor<?>>> accessorProviderRef)
+        {
+            this.desc = desc;
+            this.accessorProviderRef = accessorProviderRef;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method1, Object[] args)
+        {
+            log.debug("InvocationHandler invoking for method {} proxy {}, argCount {}", method1.getName(), proxy.toString(), args.length);
+            Object value;
+
+            if (desc.isObservable()) {
+                value = accessorProviderRef.get().get().getObservable();
+                log.debug("Invoked method {} returning Observable", method1.getName());
+            }
+            else {
+                value = accessorProviderRef.get().get().get();
+                log.debug("Invoked method {} returning value {}", method1.getName(), value == null ? "null" : value.toString());
+            }
+            return value;
+        }
     }
 
     private static ConfigDescriptor findAssociatedDescForObservable(List<ConfigDescriptor> descList, ConfigDescriptor obsDesc)
