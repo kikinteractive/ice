@@ -20,7 +20,7 @@
     <parent>
         <groupId>com.kik.config</groupId>
         <artifactId>ice-parent</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
