@@ -75,6 +75,7 @@ public class JmxDynamicConfigSourceTest
         objName2 = new ObjectName("com.kik.config.ice.source:name=ExampleSubComponentIceMBean,scope=EXAMPLE");
 
         Injector injector = Guice.createInjector(
+            JmxRemoteTestRule.module(),
             ConfigConfigurator.testModules(),
             JmxDynamicConfigSource.module(),
             ExampleComponent.module(),
@@ -84,6 +85,9 @@ public class JmxDynamicConfigSourceTest
                 protected void configure()
                 {
                     bind(MBeanServer.class).toInstance(ManagementFactory.getPlatformMBeanServer());
+
+                    // Ensure the test works with explicit bindings required
+                    binder().requireExplicitBindings();
                 }
             });
 

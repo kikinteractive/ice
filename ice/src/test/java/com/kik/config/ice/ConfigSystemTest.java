@@ -59,7 +59,8 @@ public class ConfigSystemTest
     {
         public interface Config
         {
-            @DefaultValue("asdf") // intentionally bad
+            // intentionally bad
+            @DefaultValue("asdf")
             Integer myValue();
         }
 
@@ -118,6 +119,7 @@ public class ConfigSystemTest
     public void testValidateStaticConfigurationWithBad()
     {
         Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
             ConfigConfigurator.testModules(),
             InvalidValueExample.module());
 
@@ -130,6 +132,7 @@ public class ConfigSystemTest
     public void testValidateStaticConfigurationWithGood()
     {
         Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
             ConfigConfigurator.testModules(),
             ValidValueExample.module());
 
@@ -141,7 +144,9 @@ public class ConfigSystemTest
     @Test(timeout = 5000)
     public void testNoConfiguration()
     {
-        Injector injector = Guice.createInjector(ConfigConfigurator.testModules());
+        Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
+            ConfigConfigurator.testModules());
         injector.injectMembers(this);
 
         checkNotNull(configSystem);

@@ -128,6 +128,9 @@ public class ZooKeeperDynamicConfigSourceTest
                 @Override
                 protected void configure()
                 {
+                    // Ensure the test works with explicit bindings required
+                    binder().requireExplicitBindings();
+
                     log.debug("ServerRule ConnectionString is: {}", serverRule.getConnectionString());
                     bind(String.class).annotatedWith(Names.named(ZooKeeperDynamicConfigSource.CONFIG_CONNECTION_STRING)).toInstance(serverRule.getConnectionString());
                 }

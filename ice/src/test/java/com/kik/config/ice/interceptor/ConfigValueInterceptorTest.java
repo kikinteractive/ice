@@ -24,6 +24,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigConfigurator;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.ExplicitBindingModule;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
 import java.util.Optional;
@@ -73,6 +74,7 @@ public class ConfigValueInterceptorTest
     public void testInterceptedValue() throws Exception
     {
         Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
             ConfigConfigurator.testModules(),
             Example.module(),
             ExampleInterceptor.module(5),

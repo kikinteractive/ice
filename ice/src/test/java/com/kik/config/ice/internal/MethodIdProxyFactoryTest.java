@@ -6,6 +6,7 @@ import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigConfigurator;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.ExplicitBindingModule;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.internal.MethodIdProxyFactory.MethodAndScope;
@@ -56,6 +57,7 @@ public class MethodIdProxyFactoryTest
             @Override
             protected void configure()
             {
+                install(new ExplicitBindingModule());
                 install(ConfigConfigurator.testModules());
                 install(ConfigSystem.configModule(Config1.class));
                 install(ConfigSystem.configModule(Config2.class, Names.named(NAME_A)));

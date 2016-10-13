@@ -4,6 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.kik.config.ice.ConfigConfigurator;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.ExplicitBindingModule;
 import com.kik.config.ice.annotations.DefaultValue;
 import java.lang.ref.WeakReference;
 import static org.junit.Assert.assertEquals;
@@ -34,6 +35,7 @@ public class ConfigBuilderTest
     public void testNoStaticRefsToInjector() throws Exception
     {
         Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
             ConfigConfigurator.testModules(),
             ConfigSystem.configModule(Config.class));
 
@@ -57,6 +59,7 @@ public class ConfigBuilderTest
     public void testRefToInjectorWithClass() throws Exception
     {
         Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
             ConfigConfigurator.testModules(),
             ConfigSystem.configModule(Config.class));
 

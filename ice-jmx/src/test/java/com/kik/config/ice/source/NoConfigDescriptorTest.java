@@ -45,6 +45,9 @@ public class NoConfigDescriptorTest
                 protected void configure()
                 {
                     bind(MBeanServer.class).toInstance(ManagementFactory.getPlatformMBeanServer());
+
+                    // Ensure the test works with explicit bindings required
+                    binder().requireExplicitBindings();
                 }
             });
 

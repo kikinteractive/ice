@@ -17,9 +17,10 @@ package com.kik.config.ice;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.kik.config.ice.interceptor.NoopConfigValueInterceptor;
-import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.convert.ConfigValueConverters;
+import com.kik.config.ice.interceptor.NoopConfigValueInterceptor;
+import com.kik.config.ice.internal.ConfigDescriptorHolder;
+import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 
@@ -41,6 +42,7 @@ public class ConfigConfigurator
 
                 install(FileDynamicConfigSource.module());
                 install(NoopConfigValueInterceptor.module());
+                bind(ConfigDescriptorHolder.class);
             }
         };
     }
@@ -58,6 +60,7 @@ public class ConfigConfigurator
 
                 install(DebugDynamicConfigSource.module());
                 install(NoopConfigValueInterceptor.module());
+                bind(ConfigDescriptorHolder.class);
             }
         };
     }

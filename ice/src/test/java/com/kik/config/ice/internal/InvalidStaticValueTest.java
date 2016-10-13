@@ -25,6 +25,7 @@ import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigConfigurator;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.ExplicitBindingModule;
 import com.kik.config.ice.annotations.DefaultValue;
 import org.junit.Test;
 
@@ -36,7 +37,8 @@ public class InvalidStaticValueTest
     {
         public interface Config
         {
-            @DefaultValue("asdf") // intentionally bad
+            @DefaultValue("asdf")
+                // intentionally bad
             Integer myValue();
         }
 
@@ -67,6 +69,7 @@ public class InvalidStaticValueTest
     public void testInvalidStaticValue()
     {
         Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
             ConfigConfigurator.testModules(),
             InvalidValueExample.module());
 
