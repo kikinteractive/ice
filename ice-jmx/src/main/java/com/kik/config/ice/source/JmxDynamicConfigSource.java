@@ -127,6 +127,7 @@ public class JmxDynamicConfigSource extends AbstractDynamicConfigSource implemen
             {
                 MapBinder<Integer, DynamicConfigSource> mapBinder = MapBinder.newMapBinder(binder(), Integer.class, DynamicConfigSource.class);
                 mapBinder.addBinding(priority).to(JmxDynamicConfigSource.class);
+                bind(JmxDynamicConfigSource.class);
             }
         };
     }

@@ -186,6 +186,7 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
             {
                 MapBinder<Integer, DynamicConfigSource> mapBinder = MapBinder.newMapBinder(binder(), Integer.class, DynamicConfigSource.class);
                 mapBinder.addBinding(configSourcePriority).to(DebugDynamicConfigSource.class);
+                bind(DebugDynamicConfigSource.class);
             }
         };
     }

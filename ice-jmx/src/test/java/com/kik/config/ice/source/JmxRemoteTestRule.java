@@ -15,7 +15,9 @@
  */
 package com.kik.config.ice.source;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Module;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
@@ -65,5 +67,17 @@ public class JmxRemoteTestRule
     public void remoteTest(Test test) throws Exception
     {
         test.test(mbsc);
+    }
+
+    public static Module module()
+    {
+        return new AbstractModule()
+        {
+            @Override
+            protected void configure()
+            {
+                bind(JmxRemoteTestRule.class);
+            }
+        };
     }
 }

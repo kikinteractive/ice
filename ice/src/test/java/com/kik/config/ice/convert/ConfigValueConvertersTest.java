@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
+import com.kik.config.ice.ExplicitBindingModule;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -51,7 +52,9 @@ public class ConfigValueConvertersTest
     @Before
     public void init()
     {
-        Injector injector = Guice.createInjector(ConfigValueConverters.module());
+        Injector injector = Guice.createInjector(
+            new ExplicitBindingModule(),
+            ConfigValueConverters.module());
         injector.injectMembers(this);
     }
 

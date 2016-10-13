@@ -298,6 +298,7 @@ public class ZooKeeperDynamicConfigSource extends AbstractDynamicConfigSource im
             {
                 MapBinder<Integer, DynamicConfigSource> mapBinder = MapBinder.newMapBinder(binder(), Integer.class, DynamicConfigSource.class);
                 mapBinder.addBinding(configSourcePriority).toProvider(ZooKeeperDynamicConfigSourceProvider.class).in(Scopes.SINGLETON);
+                bind(ZooKeeperDynamicConfigSource.class).toProvider(ZooKeeperDynamicConfigSourceProvider.class).in(Scopes.SINGLETON);
             }
         };
     }

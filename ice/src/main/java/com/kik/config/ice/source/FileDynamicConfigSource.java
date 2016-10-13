@@ -251,6 +251,7 @@ public class FileDynamicConfigSource extends AbstractDynamicConfigSource
             {
                 MapBinder<Integer, DynamicConfigSource> mapBinder = MapBinder.newMapBinder(binder(), Integer.class, DynamicConfigSource.class);
                 mapBinder.addBinding(configSourcePriority).to(FileDynamicConfigSource.class);
+                bind(FileDynamicConfigSource.class);
 
                 // Bind inner class as a service to ensure resource cleanup
                 Multibinder.newSetBinder(binder(), Service.class).addBinding().to(FileDynamicConfigSourceService.class);
