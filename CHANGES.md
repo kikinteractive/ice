@@ -1,5 +1,11 @@
 # ICE Releases
 
+### Version 1.0.3 - October 13, 2016 ([Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.kik.config%22%20AND%20v%3A%221.0.3%22))
+
+#### Bugfixes
+
+  - Fixed `ConfigConfigurator` and other classes to be more useful in projects which have guice configured to require explicit bindings.
+
 ### Version 1.0.2 - October 7, 2016 ([Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.kik.config%22%20AND%20v%3A%221.0.2%22))
 
 #### Features
