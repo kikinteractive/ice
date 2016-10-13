@@ -37,8 +37,8 @@ public class InvalidStaticValueTest
     {
         public interface Config
         {
+            // intentionally bad
             @DefaultValue("asdf")
-                // intentionally bad
             Integer myValue();
         }
 
