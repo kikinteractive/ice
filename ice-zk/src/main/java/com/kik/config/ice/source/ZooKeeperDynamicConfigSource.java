@@ -31,9 +31,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.ensemble.EnsembleProvider;
@@ -46,6 +49,9 @@ import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode;
 import static org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode.Mode.EPHEMERAL;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import static org.apache.curator.utils.ZKPaths.makePath;
+import rx.Completable;
+import rx.Observable;
+import rx.schedulers.Schedulers;
 
 @Slf4j
 @Singleton
@@ -78,6 +84,9 @@ public class ZooKeeperDynamicConfigSource extends AbstractDynamicConfigSource im
     private static final int CONFIG_SOURCE_PRIORITY_DEFAULT = 50;
     @VisibleForTesting
     static final String ROOT_ZK_PATH = "/config/overrides";
+
+    private static final int DEFAULT_CONCURRENT_NODE_CACHE_CREATIONS = 25;
+    private static final Duration DEFAULT_NODE_CREATION_TIMEOUT = Duration.ofSeconds(1);
 
     private final String connectionString;
     private final String namespace;
@@ -114,10 +123,12 @@ public class ZooKeeperDynamicConfigSource extends AbstractDynamicConfigSource im
         this.retryLimit = retryLimit;
 
         this.localNodeName = getLocalNodeName();
-        initializeCurator();
+
+        // Start and wait for curator initialization.
+        initializeCurator().await();
     }
 
-    private void initializeCurator()
+    private Completable initializeCurator()
     {
         // Create/start CuratorFramework client
         RetryPolicy retryPolicy = new BoundedExponentialBackoffRetry(retryBaseTime, retryMaxTime, retryLimit);
@@ -132,7 +143,17 @@ public class ZooKeeperDynamicConfigSource extends AbstractDynamicConfigSource im
         curator.start();
 
         // Create a NodeCache for each config descriptor
-        for (ConfigDescriptor desc : configDescriptors) {
+        // This creates N node caches at a time on the RxJava IO scheduler thread pool.
+        return Observable.from(configDescriptors)
+            .flatMap(desc -> buildNodeCache(desc)
+                .subscribeOn(Schedulers.io())
+                .map(nc -> this.configNodeCaches.put(desc, nc)), getConcurrentNodeCacheCreations())
+            .toCompletable();
+    }
+
+    private Observable<NodeCache> buildNodeCache(final ConfigDescriptor desc)
+    {
+        return Observable.fromCallable(() -> {
             final String configPath = makePath(ROOT_ZK_PATH, desc.getConfigName());
             final NodeCache nc = new NodeCache(curator, configPath);
             nc.getListenable().addListener(() -> onNodeChanged(nc, desc));
@@ -142,16 +163,22 @@ public class ZooKeeperDynamicConfigSource extends AbstractDynamicConfigSource im
                 // Note that we have to force calling onNodeChanged() here since `nc.start(true)` will not emit an initial event.
                 onNodeChanged(nc, desc);
 
-                // Create the ephemeral node last, just in case something goes wrong with seting up the node cache
+                // Create the ephemeral node last, just in case something goes wrong with setting up the node cache
+                // NOTE: This process is what actually creates the configuration node if it was missing.
                 PersistentEphemeralNode en = new PersistentEphemeralNode(curator, EPHEMERAL, makePath(configPath, localNodeName), new byte[0]);
                 en.start();
+                if (!en.waitForInitialCreate(getDefaultNodeCreationTimeout().toMillis(), TimeUnit.MILLISECONDS)) {
+                    throw new TimeoutException("Timeout on creation of ephemeral node for " + makePath(configPath, localNodeName));
+                }
                 ephemeralNodes.put(desc, en);
+
+                return nc;
             }
             catch (Exception ex) {
                 log.warn("Failed to initialize for configPath {}", configPath, ex);
+                throw ex;
             }
-            this.configNodeCaches.put(desc, nc);
-        }
+        });
     }
 
     private static String getLocalNodeName()
@@ -215,6 +242,28 @@ public class ZooKeeperDynamicConfigSource extends AbstractDynamicConfigSource im
         catch (Exception ex) {
             log.warn("Failed to handle onNodeChanged w/ new data for config key {}, data {}", desc.getConfigName(), childData, ex);
         }
+    }
+
+    /**
+     * Provides the maximum number of configuration nodes to initialize concurrently.
+     * Override this method if your application needs a different value.
+     *
+     * @return Number of node cache instances to create concurrently during startup
+     */
+    protected int getConcurrentNodeCacheCreations()
+    {
+        return DEFAULT_CONCURRENT_NODE_CACHE_CREATIONS;
+    }
+
+    /**
+     * Provides the maximum duration to wait for a configuration node to be created.
+     * Override this method if your application needs a different value.
+     *
+     * @return Duration indicating the timeout to wait for node creations
+     */
+    protected Duration getDefaultNodeCreationTimeout()
+    {
+        return DEFAULT_NODE_CREATION_TIMEOUT;
     }
 
     public static class ZooKeeperDynamicConfigSourceProvider implements Provider<ZooKeeperDynamicConfigSource>

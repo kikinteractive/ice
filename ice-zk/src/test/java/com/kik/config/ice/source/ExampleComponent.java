@@ -33,6 +33,7 @@ public class ExampleComponent
 {
     private static final String subComponentName = "EXAMPLE";
 
+    //<editor-fold defaultstate="collapsed" desc="Config">
     public interface Config
     {
         @DefaultValue("true")
@@ -46,7 +47,94 @@ public class ExampleComponent
 
         @DefaultValue(value = "a,b,c", innerType = String.class)
         List<String> hostnames();
+
+        // Values beyond this point are intended to check the startup time of th DynamicConfigSource component
+
+        @DefaultValue("1")
+        int extraValue1();
+
+        @DefaultValue("1")
+        int extraValue2();
+
+        @DefaultValue("1")
+        int extraValue3();
+
+        @DefaultValue("1")
+        int extraValue4();
+
+        @DefaultValue("1")
+        int extraValue5();
+
+        @DefaultValue("1")
+        int extraValue6();
+
+        @DefaultValue("1")
+        int extraValue7();
+
+        @DefaultValue("1")
+        int extraValue8();
+
+        @DefaultValue("1")
+        int extraValue9();
+
+        @DefaultValue("1")
+        int extraValue10();
+
+        @DefaultValue("1")
+        int extraValue11();
+
+        @DefaultValue("1")
+        int extraValue12();
+
+        @DefaultValue("1")
+        int extraValue13();
+
+        @DefaultValue("1")
+        int extraValue14();
+
+        @DefaultValue("1")
+        int extraValue15();
+
+        @DefaultValue("1")
+        int extraValue16();
+
+        @DefaultValue("1")
+        int extraValue17();
+
+        @DefaultValue("1")
+        int extraValue18();
+
+        @DefaultValue("1")
+        int extraValue19();
+
+        @DefaultValue("1")
+        int extraValue20();
+
+        @DefaultValue("1")
+        int extraValue21();
+
+        @DefaultValue("1")
+        int extraValue22();
+
+        @DefaultValue("1")
+        int extraValue23();
+
+        @DefaultValue("1")
+        int extraValue24();
+
+        @DefaultValue("1")
+        int extraValue25();
+
+        @DefaultValue("1")
+        int extraValue26();
+
+        @DefaultValue("1")
+        int extraValue27();
+
+        @DefaultValue("1")
+        int extraValue28();
     }
+    //</editor-fold>
 
     @VisibleForTesting
     @Inject
