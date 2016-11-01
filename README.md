@@ -19,7 +19,7 @@ You can use ice with maven by adding the following to your pom.xml:
   <dependency>
     <groupId>com.kik.config</groupId>
     <artifactId>ice</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
   </dependency>
 </dependencies>
 ```

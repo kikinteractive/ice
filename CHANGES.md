@@ -1,5 +1,11 @@
 # ICE Releases
 
+### Version 1.0.4 - November 1, 2016 ([Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.kik.config%22%20AND%20v%3A%221.0.4%22))
+
+#### Bugfixes
+
+  - Updated `ZookeeperDynamicConfigSource` to initialize its internal node caches in parallel to speed up initialization time in systems with large numbers of configuration entries.
+
 ### Version 1.0.3 - October 13, 2016 ([Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.kik.config%22%20AND%20v%3A%221.0.3%22))
 
 #### Bugfixes
