@@ -156,7 +156,7 @@ public class ZooKeeperDynamicConfigSourceTest
         assertEquals(Duration.parse("PT5M30S"), example.subComp.config.expiry());
 
         assertNotNull(configDescriptors);
-        assertEquals(7, configDescriptors.size());
+        assertEquals(35, configDescriptors.size());
     }
 
     private void assertAllNodesExistAndEmpty() throws Exception
@@ -164,7 +164,7 @@ public class ZooKeeperDynamicConfigSourceTest
         for (ConfigDescriptor desc : configDescriptors) {
             final String configPath = ZKPaths.makePath(ZooKeeperDynamicConfigSource.ROOT_ZK_PATH, desc.getConfigName());
             Stat stat = curator.checkExists().forPath(configPath);
-            assertNotNull(stat);
+            assertNotNull("Node missing for configPath " + configPath, stat);
 
             byte[] data = curator.getData().forPath(configPath);
             String dataStr = null;
@@ -196,7 +196,7 @@ public class ZooKeeperDynamicConfigSourceTest
      *
      * @throws Exception
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 5_000)
     @SuppressWarnings("UnnecessaryUnboxing")
     public void testBasicFunctionality() throws Exception
     {
