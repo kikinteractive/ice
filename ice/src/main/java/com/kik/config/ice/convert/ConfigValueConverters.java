@@ -17,6 +17,7 @@ package com.kik.config.ice.convert;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -32,6 +33,7 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -152,6 +154,14 @@ public class ConfigValueConverters
         return parseCsvLine(input);
     }
 
+    public static Set<String> toStringSet(String input)
+    {
+        if (Strings.isNullOrEmpty(input)) {
+            return null;
+        }
+        return ImmutableSet.copyOf(parseCsvLine(input));
+    }
+
     public static <T> Optional<T> toOptional(ConfigValueConverter<T> innerConverter, String input)
     {
         return Optional.ofNullable(innerConverter.apply(input));
@@ -225,6 +235,11 @@ public class ConfigValueConverters
                 {
                 };
                 bindConverter(listOfStringType, mapBinder, ConfigValueConverters::toStringList);
+
+                final TypeLiteral<Set<String>> setOfStringType = new TypeLiteral<Set<String>>()
+                {
+                };
+                bindConverter(setOfStringType, mapBinder, ConfigValueConverters::toStringSet);
             }
 
             private <T> void bindConverter(

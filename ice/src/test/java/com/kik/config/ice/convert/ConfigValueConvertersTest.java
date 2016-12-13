@@ -15,6 +15,7 @@
  */
 package com.kik.config.ice.convert;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -31,6 +32,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -45,6 +47,8 @@ public class ConfigValueConvertersTest
 
     @Inject
     private ConfigValueConverter<List<String>> stringListConverter;
+    @Inject
+    private ConfigValueConverter<Set<String>> stringSetConverter;
 
     @Inject
     private ConfigValueConverter<Optional<Integer>> optIntConverter;
@@ -111,6 +115,22 @@ public class ConfigValueConvertersTest
         assertEquals("a", result.get(0));
         assertEquals("b", result.get(1));
         assertEquals("c", result.get(2));
+    }
+
+    @Test(timeout = 5000)
+    public void testStringSetConverter()
+    {
+        Set<String> result = stringSetConverter.apply(null);
+        assertNull(result);
+
+        result = stringSetConverter.apply("");
+        assertNull(result);
+
+        result = stringSetConverter.apply("a,b,c");
+        assertNotNull(result);
+        assertEquals(3, result.size());
+
+        assertEquals(Sets.newHashSet("c", "b", "a"), result);
     }
 
     @Test(timeout = 5000)
