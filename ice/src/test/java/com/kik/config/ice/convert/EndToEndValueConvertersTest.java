@@ -26,6 +26,7 @@ import com.kik.config.ice.ExplicitBindingModule;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -67,6 +68,9 @@ public class EndToEndValueConvertersTest
         assertEquals("123", config.stringVal());
         assertEquals(Lists.newArrayList("a", "b", "c"), config.listOfStrings());
         assertEquals(Sets.newHashSet("foo,bar", "abc"), config.setOfStrings());
+
+        configSource.fireEvent("com.kik.config.ice.convert.EndToEndValueConvertersTest$Config.setOfStrings", Optional.of("1,2,3"));
+        assertEquals(Sets.newHashSet("3", "2", "1"), config.setOfStrings());
     }
 
 }
