@@ -15,24 +15,19 @@
  */
 package com.kik.config.ice.source;
 
-import com.google.common.base.Strings;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.kik.config.ice.exception.ConfigException;
-import com.kik.config.ice.internal.ConfigChangeEvent;
 import com.kik.config.ice.internal.ConfigDescriptor;
 import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.internal.MethodIdProxyFactory;
 import com.kik.config.ice.sink.ConfigEventSink;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import rx.Observable;
-import rx.subjects.BehaviorSubject;
 
 /**
  * An {@link AbstractDynamicConfigSource} which allows direct manipulation of configuration values.
@@ -59,15 +54,8 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
     @Inject
     protected DebugDynamicConfigSource(ConfigDescriptorHolder configDescriptorHolder)
     {
-        super(Collections.emptySet());
+        super(configDescriptorHolder.configDescriptors);
         validDescriptors = configDescriptorHolder.configDescriptors;
-    }
-
-    @Override
-    public Observable<ConfigChangeEvent<String>> getObservable(String configName)
-    {
-        initializeConfigValue(configName);
-        return subjectMap.get(configName);
     }
 
     /**
@@ -98,10 +86,11 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
     }
 
     /**
-     * Provides the start of a call chain which identifies and sets a configuration value.  Note that this needs to be
-     * used in conjunction with a method call to a method-identifying proxy, which can be retrieved via {@link #id(Class)}
+     * Provides the start of a call chain which identifies and sets a configuration value. Note that this needs to be
+     * used in conjunction with a method call to a method-identifying proxy, which can be retrieved via
+     * {@link #id(Class)}
      *
-     * @param ignoredValueFromProxy The value returned by the method call against a method-identifying proxy.  The actual
+     * @param ignoredValueFromProxy The value returned by the method call against a method-identifying proxy. The actual
      *                              value here is irrelevant and is ignored.
      * @param <V>                   The value type of the configuration entry to be changed
      * @return a {@link DebugValueSetter} instance that will change the identified configuration value.
@@ -154,22 +143,12 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
      *                   implies that the value has been "unset" for the purposes of this config source.
      */
     @Override
-    public void fireEvent(String configName, Optional<String> valueOpt)
+    public void fireEvent(String configName, Optional<String> valueOpt) throws ConfigException
     {
-        initializeConfigValue(configName);
-        emitEvent(configName, valueOpt);
-    }
-
-    private void initializeConfigValue(String name)
-    {
-        if (Strings.isNullOrEmpty(name) || subjectMap.containsKey(name)) {
-            return;
+        if (!subjectMap.containsKey(configName)) {
+            throw new ConfigException("Unknown configName {}", configName);
         }
-        BehaviorSubject<ConfigChangeEvent<String>> behaviorSubject = BehaviorSubject.create();
-        behaviorSubject.onNext(new ConfigChangeEvent<>(name, Optional.empty()));
-        subjectMap.put(name, behaviorSubject.toSerialized());
-        lastEmittedValues.put(name, Optional.empty());
-        log.trace("Initialized Config Value '{}'", name);
+        emitEvent(configName, valueOpt);
     }
 
     public static Module module()
