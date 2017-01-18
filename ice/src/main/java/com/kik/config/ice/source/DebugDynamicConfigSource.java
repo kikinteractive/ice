@@ -26,7 +26,6 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.internal.MethodIdProxyFactory;
 import com.kik.config.ice.sink.ConfigEventSink;
 import java.util.Optional;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,13 +48,10 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
 {
     private static final int CONFIG_SOURCE_PRIORITY_DEFAULT = 0;
 
-    private final Set<ConfigDescriptor> validDescriptors;
-
     @Inject
     protected DebugDynamicConfigSource(ConfigDescriptorHolder configDescriptorHolder)
     {
         super(configDescriptorHolder.configDescriptors);
-        validDescriptors = configDescriptorHolder.configDescriptors;
     }
 
     /**
@@ -102,7 +98,7 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
             throw new ConfigException("Failed to identify config method previous to calling overrideDefault");
         }
 
-        final Optional<ConfigDescriptor> configDescOpt = validDescriptors.stream()
+        final Optional<ConfigDescriptor> configDescOpt = configDescriptors.stream()
             .filter(desc -> desc.getMethod().equals(lastProxyMethodAndScope.getMethod()) && desc.getScope().equals(lastProxyMethodAndScope.getScopeOpt()))
             .findAny();
         final String configKey = configDescOpt.map(desc -> desc.getConfigName()).orElseThrow(
