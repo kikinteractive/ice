@@ -9,6 +9,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.exception.ConfigException;
 import java.time.Duration;
+import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -112,6 +113,9 @@ public class DebugDynamicConfigSourceTest
 
         dcs.set(dcs.id(Config1.class).connectionString()).toEmpty();
         assertEquals("a test string", c1.connectionString());
+
+        dcs.fireEvent("com.kik.config.ice.source.DebugDynamicConfigSourceTest$Config1.connectionString", Optional.of("Foo"));
+        assertEquals("Foo", c1.connectionString());
     }
 
     @Test(timeout = 5_000, expected = ConfigException.class)
@@ -119,6 +123,12 @@ public class DebugDynamicConfigSourceTest
     {
         // No call on a method ID proxy prior to calling .set()
         dcs.set(0L).toValue(123L);
+    }
+
+    @Test(timeout = 5_000, expected = ConfigException.class)
+    public void testNoMethodIdFromFireEvent()
+    {
+        dcs.fireEvent("com.kik.config.ice.source.DebugDynamicConfigSourceTest$Config1.connectionStringXXX", Optional.of("wont work"));
     }
 
     @Test(timeout = 5_000, expected = ConfigException.class)

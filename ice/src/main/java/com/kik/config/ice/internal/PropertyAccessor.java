@@ -15,6 +15,7 @@
  */
 package com.kik.config.ice.internal;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -99,7 +100,7 @@ public class PropertyAccessor<T> implements Supplier<T>
         this.propertySubject = BehaviorSubject.create(this.defaultValue).toSerialized();
 
         this.dynamicObservables = this.dynamicAccessors.stream()
-            .map(acc -> acc.getObservable(this.propertyName))
+            .map(acc -> checkNotNull(acc.getObservable(this.propertyName)))
             .collect(toList());
 
         this.subscriptions = Lists.newArrayListWithCapacity(this.dynamicObservables.size());

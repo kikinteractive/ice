@@ -17,6 +17,7 @@ package com.kik.config.ice.source;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.internal.ConfigChangeEvent;
@@ -24,7 +25,6 @@ import com.kik.config.ice.internal.ConfigDescriptor;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collector;
@@ -41,7 +41,7 @@ public abstract class AbstractDynamicConfigSource implements DynamicConfigSource
 {
     protected final ImmutableList<ConfigDescriptor> configDescriptors;
     protected final ConcurrentMap<String, Optional<String>> lastEmittedValues;
-    protected final Map<String, Subject<ConfigChangeEvent<String>, ConfigChangeEvent<String>>> subjectMap;
+    protected final ImmutableMap<String, Subject<ConfigChangeEvent<String>, ConfigChangeEvent<String>>> subjectMap;
 
     protected AbstractDynamicConfigSource(Collection<ConfigDescriptor> configDescriptors)
     {
@@ -58,20 +58,17 @@ public abstract class AbstractDynamicConfigSource implements DynamicConfigSource
             .collect(toImmutableList());
 
         this.lastEmittedValues = Maps.newConcurrentMap();
-        this.subjectMap = Maps.newHashMap();
 
-        initializeRx();
-    }
-
-    private void initializeRx()
-    {
         // Initialize lastEmittedValues and subjectMap for each descriptor
+        ImmutableMap.Builder mapBuilder = ImmutableMap.builder();
         for (ConfigDescriptor desc : configDescriptors) {
             BehaviorSubject<ConfigChangeEvent<String>> behaviorSubject = BehaviorSubject.create();
             behaviorSubject.onNext(new ConfigChangeEvent<>(desc.getConfigName(), Optional.empty()));
-            subjectMap.put(desc.getConfigName(), behaviorSubject.toSerialized());
+            mapBuilder.put(desc.getConfigName(), behaviorSubject.toSerialized());
             lastEmittedValues.put(desc.getConfigName(), Optional.empty());
         }
+        subjectMap = mapBuilder.build();
+
         log.debug("Finished constructing Rx.Subjects for {} configuration keys", configDescriptors.size());
     }
 
