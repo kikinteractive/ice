@@ -94,6 +94,13 @@ public class ConfigValueConvertersTest
     }
 
     @Test(timeout = 5000)
+    public void testConverters_float()
+    {
+        ConfigValueConverter<Float> converter = getConverter(Float.class);
+        assertEquals(1.23f, converter.apply("1.23"));
+    }
+
+    @Test(timeout = 5000)
     public void testConverters_duration()
     {
         ConfigValueConverter<Duration> converter = getConverter(Duration.class);

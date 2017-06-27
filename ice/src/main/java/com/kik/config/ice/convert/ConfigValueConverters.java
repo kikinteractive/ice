@@ -61,6 +61,14 @@ public class ConfigValueConverters
         return Double.parseDouble(input);
     }
 
+    public static Float toFloat(String input)
+    {
+        if (Strings.isNullOrEmpty(input)) {
+            return null;
+        }
+        return Float.parseFloat(input);
+    }
+
     public static Long toLong(String input)
     {
         if (Strings.isNullOrEmpty(input)) {
@@ -193,6 +201,11 @@ public class ConfigValueConverters
                 bindOptionalConverter(new TypeLiteral<Optional<Double>>()
                 {
                 }, Double.class, mapBinder, v -> toOptional(ConfigValueConverters::toDouble, v));
+
+                bindConverter(Float.class, mapBinder, ConfigValueConverters::toFloat);
+                bindOptionalConverter(new TypeLiteral<Optional<Float>>()
+                {
+                }, Float.class, mapBinder, v -> toOptional(ConfigValueConverters::toFloat, v));
 
                 bindConverter(Long.class, mapBinder, ConfigValueConverters::toLong);
                 bindOptionalConverter(new TypeLiteral<Optional<Long>>()
