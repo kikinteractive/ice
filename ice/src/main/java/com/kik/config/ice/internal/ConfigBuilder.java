@@ -84,7 +84,7 @@ public class ConfigBuilder
      * @param configInterface a reference to the interface class being configured
      * @param nameOpt         an optional {@link Named} used to provide a scope for the generated config module
      * @return a Guice Module which provides all the needed bindings to support an injection of the config interface
-     *         provided
+     * provided
      */
     public static <C> Module configModule(final Class<C> configInterface, final Optional<Named> nameOpt)
     {
@@ -207,16 +207,16 @@ public class ConfigBuilder
         @Override
         public Object invoke(Object proxy, Method method1, Object[] args)
         {
-            log.debug("InvocationHandler invoking for method {} proxy {}, argCount {}", method1.getName(), proxy.toString(), args.length);
+            log.trace("InvocationHandler invoking for method {} proxy {}, argCount {}", method1.getName(), proxy.toString(), args.length);
             Object value;
 
             if (desc.isObservable()) {
                 value = accessorProviderRef.get().get().getObservable();
-                log.debug("Invoked method {} returning Observable", method1.getName());
+                log.trace("Invoked method {} returning Observable", method1.getName());
             }
             else {
                 value = accessorProviderRef.get().get().get();
-                log.debug("Invoked method {} returning value {}", method1.getName(), value == null ? "null" : value.toString());
+                log.trace("Invoked method {} returning value {}", method1.getName(), value == null ? "null" : value.toString());
             }
             return value;
         }
@@ -226,7 +226,7 @@ public class ConfigBuilder
     {
         final String obsDescName = obsDesc.getMethod().getName();
         final String nameToFind = obsDescName.substring(0, obsDescName.length() - StaticConfigHelper.OBSERVABLE_METHOD_SUFFIX.length());
-        log.debug("Looking for associated Descriptor named {}", nameToFind);
+        log.trace("Looking for associated Descriptor named {}", nameToFind);
         return descList.stream()
             .filter(d -> d.getMethod().getName().equals(nameToFind))
             .findFirst()
