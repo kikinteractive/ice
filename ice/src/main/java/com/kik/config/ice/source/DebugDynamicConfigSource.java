@@ -25,8 +25,6 @@ import com.kik.config.ice.internal.ConfigDescriptor;
 import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.internal.MethodIdProxyFactory;
 import com.kik.config.ice.sink.ConfigEventSink;
-import java.lang.reflect.Array;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -169,16 +167,6 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
         }
         else if (type instanceof ParameterizedType) {
             return getClass(((ParameterizedType) type).getRawType());
-        }
-        else if (type instanceof GenericArrayType) {
-            Type componentType = ((GenericArrayType) type).getGenericComponentType();
-            Class<?> componentClass = getClass(componentType);
-            if (componentClass != null) {
-                return Array.newInstance(componentClass, 0).getClass();
-            }
-            else {
-                return null;
-            }
         }
         else {
             return null;
