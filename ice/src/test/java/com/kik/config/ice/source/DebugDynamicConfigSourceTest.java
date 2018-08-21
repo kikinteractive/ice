@@ -129,13 +129,13 @@ public class DebugDynamicConfigSourceTest
 
         assertEquals(Duration.ofSeconds(222), c2.expiry());
 
-        dcs.set(dcs.id(Config2.class).stringSet()).toValue(Sets.newHashSet("jim", "judy", "jacob"));
+        dcs.set(dcs.id(Config2.class).stringSet()).toValue(Sets.newHashSet("jim", "judy,jasper", "jacob"));
         assertEquals(3, c2.stringSet().size());
-        assertTrue(c2.stringSet().containsAll(Sets.newHashSet("jim", "judy", "jacob")));
+        assertTrue(c2.stringSet().containsAll(Sets.newHashSet("jim", "judy,jasper", "jacob")));
 
-        dcs.set(dcs.id(Config2.class).stringList()).toValue(Lists.newArrayList("a", "b", "c"));
+        dcs.set(dcs.id(Config2.class).stringList()).toValue(Lists.newArrayList("a", "\"b1,b2\"", "c"));
         assertEquals(3, c2.stringList().size());
-        assertTrue(c2.stringList().containsAll(Lists.newArrayList("a", "b", "c")));
+        assertTrue(c2.stringList().containsAll(Lists.newArrayList("a", "b1,b2", "c")));
 
         // Clearing Config2 values
         dcs.set(c2Proxy.expiry()).toEmpty();

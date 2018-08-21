@@ -118,7 +118,15 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
 
                 if (configClass != null && Collection.class.isAssignableFrom(configClass)) {
                     final Collection collection = (Collection) value;
-                    stringValue = collection == null ? "" : (String) collection.stream().collect(Collectors.joining(","));
+                    stringValue = collection == null ? "" : (String) collection.stream().map(v -> {
+                        String s = String.valueOf(v);
+                        if (s.startsWith("\"") && s.endsWith("\"")) {
+                            return s;
+                        }
+                        else {
+                            return "\"" + s + "\"";
+                        }
+                    }).collect(Collectors.joining(","));
                 }
                 else {
                     stringValue = value == null ? "" : String.valueOf(value);
