@@ -135,7 +135,7 @@ public class DebugDynamicConfigSourceTest
 
         dcs.set(dcs.id(Config2.class).stringList()).toValue(Lists.newArrayList("a", "\"b1,b2\"", "c"));
         assertEquals(3, c2.stringList().size());
-        assertTrue(c2.stringList().containsAll(Lists.newArrayList("a", "b1,b2", "c")));
+        assertTrue(c2.stringList().containsAll(Lists.newArrayList("a", "\"b1,b2\"", "c")));
 
         // Clearing Config2 values
         dcs.set(c2Proxy.expiry()).toEmpty();
