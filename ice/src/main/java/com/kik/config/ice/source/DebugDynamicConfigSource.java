@@ -25,7 +25,11 @@ import com.kik.config.ice.internal.ConfigDescriptor;
 import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.internal.MethodIdProxyFactory;
 import com.kik.config.ice.sink.ConfigEventSink;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -103,13 +107,24 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
             .findAny();
         final String configKey = configDescOpt.map(desc -> desc.getConfigName()).orElseThrow(
             () -> new ConfigException("Config method identified is not correctly registered in the config system"));
+        final Class<?> configClass = getClass(configDescOpt.get().getConfigType());
 
         return new DebugValueSetter<V>()
         {
             @Override
             public void toValue(final V value)
             {
-                final String stringValue = value == null ? "" : String.valueOf(value);
+                final String stringValue;
+
+                if (configClass != null && Collection.class.isAssignableFrom(configClass)) {
+                    final Collection collection = (Collection) value;
+                    stringValue = collection == null ? "" : (String) collection.stream()
+                        .map(v -> "\"" + String.valueOf(v).replaceAll("\"", "\"\"") + "\"")
+                        .collect(Collectors.joining(","));
+                }
+                else {
+                    stringValue = value == null ? "" : String.valueOf(value);
+                }
                 fireEvent(configKey, Optional.ofNullable(stringValue));
             }
 
@@ -145,6 +160,19 @@ public class DebugDynamicConfigSource extends AbstractDynamicConfigSource implem
             throw new ConfigException("Unknown configName {}", configName);
         }
         emitEvent(configName, valueOpt);
+    }
+
+    private static Class<?> getClass(Type type)
+    {
+        if (type instanceof Class) {
+            return (Class) type;
+        }
+        else if (type instanceof ParameterizedType) {
+            return getClass(((ParameterizedType) type).getRawType());
+        }
+        else {
+            return null;
+        }
     }
 
     public static Module module()

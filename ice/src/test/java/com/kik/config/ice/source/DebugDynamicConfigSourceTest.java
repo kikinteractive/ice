@@ -1,5 +1,7 @@
 package com.kik.config.ice.source;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -9,7 +11,9 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.exception.ConfigException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -34,6 +38,12 @@ public class DebugDynamicConfigSourceTest
     {
         @DefaultValue("PT1H")
         Duration expiry();
+
+        @DefaultValue(value = "alice,bob", innerType = String.class)
+        Set<String> stringSet();
+
+        @DefaultValue(value = "x,y", innerType = String.class)
+        List<String> stringList();
 
         // TODO: Fix Generics
         // @DefaultValue("abc");
@@ -92,14 +102,6 @@ public class DebugDynamicConfigSourceTest
         assertEquals(true, c1.enabled());
         assertEquals(10_000L, c1.timeout());
 
-        // Check basic Config2 changes
-        assertEquals(Duration.ofHours(1), c2.expiry());
-
-        Config2 c2Proxy = dcs.id(Config2.class);
-        dcs.set(c2Proxy.expiry()).toValue(Duration.ofSeconds(222));
-
-        assertEquals(Duration.ofSeconds(222), c2.expiry());
-
         // Check the new method id proxy is the same instance
         // direct reference comparison is intended here
         assertTrue(c1Proxy == dcs.id(Config1.class));
@@ -116,6 +118,34 @@ public class DebugDynamicConfigSourceTest
 
         dcs.fireEvent("com.kik.config.ice.source.DebugDynamicConfigSourceTest$Config1.connectionString", Optional.of("Foo"));
         assertEquals("Foo", c1.connectionString());
+
+        // Check basic Config2 changes
+        assertEquals(Duration.ofHours(1), c2.expiry());
+        assertTrue(c2.stringSet().containsAll(Sets.newHashSet("alice", "bob")));
+        assertTrue(c2.stringList().containsAll(Lists.newArrayList("x", "y")));
+
+        Config2 c2Proxy = dcs.id(Config2.class);
+        dcs.set(c2Proxy.expiry()).toValue(Duration.ofSeconds(222));
+
+        assertEquals(Duration.ofSeconds(222), c2.expiry());
+
+        dcs.set(dcs.id(Config2.class).stringSet()).toValue(Sets.newHashSet("jim", ",judy,jasper", "jacob"));
+        assertEquals(3, c2.stringSet().size());
+        assertTrue(c2.stringSet().containsAll(Sets.newHashSet("jim", ",judy,jasper", "jacob")));
+
+        dcs.set(dcs.id(Config2.class).stringList()).toValue(Lists.newArrayList("a", "\"b1,b2\",b3,", "c"));
+        assertEquals(3, c2.stringList().size());
+        assertTrue(c2.stringList().containsAll(Lists.newArrayList("a", "\"b1,b2\",b3,", "c")));
+
+        // Clearing Config2 values
+        dcs.set(c2Proxy.expiry()).toEmpty();
+        assertEquals(Duration.ofHours(1), c2.expiry());
+
+        dcs.set(dcs.id(Config2.class).stringSet()).toEmpty();
+        assertTrue(c2.stringSet().containsAll(Sets.newHashSet("alice", "bob")));
+
+        dcs.set(dcs.id(Config2.class).stringList()).toEmpty();
+        assertTrue(c2.stringList().containsAll(Lists.newArrayList("x", "y")));
     }
 
     @Test(timeout = 5_000, expected = ConfigException.class)
